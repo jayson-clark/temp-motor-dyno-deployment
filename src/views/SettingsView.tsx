@@ -53,11 +53,18 @@ function Check({ name, children }: { name: BoolKey; children: ReactNode }) {
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * One row of the settings: what the group is and why, on the left, and its
+ * fields on the right, on the same columns as every other row's.
+ */
+function Group({ title, help, children }: { title: string; help: ReactNode; children: ReactNode }) {
   return (
-    <fieldset className="panel">
-      <legend>{title}</legend>
-      {children}
+    <fieldset className="setting-row">
+      <div className="setting-meta">
+        <legend>{title}</legend>
+        <p className="help">{help}</p>
+      </div>
+      <div className="setting-fields">{children}</div>
     </fieldset>
   );
 }
@@ -79,36 +86,39 @@ export function SettingsView() {
         </button>
       </div>
 
-      <form className="settings-grid" onSubmit={(e) => e.preventDefault()} autoComplete="off">
-        <Group title="Motor supply">
-          <NumberField name="motor_v" label="Motor voltage" unit="V" min={0} max={48} step={0.1} />
-          <p className="help">
-            What the bench supply is set to. Before starting the motor the sweep checks the supply is within 10%, and it
-            stops if the supply sags more than 15% under load. 0 turns both checks off.
-          </p>
+      <form className="panel settings" onSubmit={(e) => e.preventDefault()} autoComplete="off">
+        <Group
+          title="Motor supply"
+          help="What the bench supply is set to. Before starting the motor the sweep checks the supply is within 10%, and it stops if the supply stays more than 15% low under load. 0 turns both checks off."
+        >
+          <div className="fields">
+            <NumberField name="motor_v" label="Motor voltage" unit="V" min={0} max={48} step={0.1} />
+          </div>
         </Group>
 
-        <Group title="Brake schedule">
-          <div className="form-row three">
+        <Group title="Brake schedule" help="The brake duties the sweep steps through. Sweeping back down as well shows hysteresis, and doubles the time.">
+          <div className="fields">
             <NumberField name="brake_start" label="Start" unit="%" min={0} max={100} step={1} />
             <NumberField name="brake_end" label="End" unit="%" min={0} max={100} step={1} />
             <NumberField name="brake_step" label="Step" unit="%" min={1} max={100} step={1} />
           </div>
-          <Check name="bidirectional">Sweep back down too (shows hysteresis, doubles the time)</Check>
+          <Check name="bidirectional">Sweep back down too</Check>
         </Group>
 
-        <Group title="Timing">
-          <div className="form-row">
+        <Group title="Timing" help="The motor spins up unloaded first. Each brake step then settles (discarded) and dwells (measured) at the sample rate.">
+          <div className="fields">
             <NumberField name="warmup_s" label="Warm-up" unit="s" min={0} max={30} step={0.1} />
             <NumberField name="settle_s" label="Settle" unit="s" min={0} max={30} step={0.1} />
             <NumberField name="dwell_s" label="Dwell" unit="s" min={0.2} max={60} step={0.1} />
             <NumberField name="sample_hz" label="Sample rate" unit="Hz" min={1} max={100} step={1} />
           </div>
-          <p className="help">Each brake step settles (discarded), then dwells (measured) at the sample rate.</p>
         </Group>
 
-        <Group title="Torque">
-          <div className="form-row">
+        <Group
+          title="Torque"
+          help="The unit the load cell is calibrated in. Calibrating from a hung weight sets this to a torque unit, where the lever arm isn't used. Auto-zero takes the unloaded warm-up reading as zero torque."
+        >
+          <div className="fields">
             <label className="field">
               <span className="field-label">Load cell unit</span>
               <select className="input" value={unit} disabled={locked} onChange={(e) => c.setParams({ load_unit: e.target.value as SweepParams["load_unit"] })}>
@@ -119,21 +129,19 @@ export function SettingsView() {
             </label>
             <NumberField name="arm_mm" label="Lever arm" unit="mm" min={0} step={0.1} />
           </div>
-          <p className="help">The unit the load cell is calibrated in. Calibrating from a hung weight sets this to a torque unit, where the lever arm isn't used.</p>
           <Check name="auto_zero">Auto-zero on the warm-up</Check>
           <Check name="invert_load">Invert the load sign</Check>
         </Group>
 
-        <Group title="Filtering">
-          <div className="form-row">
+        <Group title="Filtering" help="Readings further than this many deviations from the median are dropped, then this fraction is trimmed from each end before averaging.">
+          <div className="fields">
             <NumberField name="mad_k" label="MAD reject" unit="σ" min={0.5} max={20} step={0.1} />
             <NumberField name="trim" label="Trim fraction" min={0} max={0.4} step={0.05} />
           </div>
-          <p className="help">Readings further than this many deviations from the median are dropped, then this fraction is trimmed from each end before averaging.</p>
         </Group>
 
-        <Group title="Safety">
-          <div className="form-row">
+        <Group title="Safety" help="A step slower than the stall speed counts as stalled. The battery here is the ERC2's own, which only runs the controller.">
+          <div className="fields">
             <NumberField name="stall_rpm" label="Stall below" unit="rpm" min={0} step={0.5} />
             <NumberField name="min_battery_v" label="Min ERC2 battery" unit="V" min={0} step={0.1} />
           </div>
