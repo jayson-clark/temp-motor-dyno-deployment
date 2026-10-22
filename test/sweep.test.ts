@@ -87,7 +87,8 @@ describe("whole sweeps against the simulator", () => {
     rig.on("status", (s) => (started = started || s.motorOn));
     try {
       const result = await new SweepRunner(rig, mergeParams(FAST)).run();
-      expect(result.error).toMatch(/reads 12\.0\d V, but this sweep is set for 6\.0 V/);
+      // The simulated supply carries a few millivolts of noise: 11.99 or 12.01.
+      expect(result.error).toMatch(/reads 1[12]\.\d\d V, but this sweep is set for 6\.0 V/);
       expect(started, "the motor never ran").toBe(false);
       expect(result.steps).toHaveLength(0);
     } finally {
